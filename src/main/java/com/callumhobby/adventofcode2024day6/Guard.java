@@ -15,63 +15,100 @@ import java.util.Arrays;
 public class Guard {
 
     private Integer[] position;
+    private List<Integer[]> obstacles;
+    public List<Integer[]> coordinatesVisited;
+    private Integer stepsSinceLastUnknownCoordinate;
+    public boolean hasLeftArea;
 
     /**
-     * assumes start position of top left of x to be top left of grid.
-     * Coordinate order and x travel pattern are the way you read.
-     *
-     * @param topLeft
+     * @param start, where guard pointer was found
+     * @param knownObstacles, a list of obstacle locations found on the map
      */
-    public Guard(Integer[] topLeft) {
-        setupWindowAtNewPosition(topLeft);
-    }
-    
-    public boolean takeStep(String direction) {
-        Integer[] original = position;
-        switch (direction) {
-            case "up":
-                position[0] += 1;
-            case "down":
-                position[1] -= 1;
-            case "left":
-                ;
-            default:
-                break;
-        }
-        
-    }
-    
-    public List<Integer[][]> shiftDownOneAndReturnToLeft() {
-        Integer[] newCoordinates = {windowPosition[0][0] + 1, 0};
-        setupWindowAtNewPosition(newCoordinates);        
-        return getCoordsOfStringsToCheck();
-    }
-    
-    public boolean hasSpaceToShiftDown(Integer gridMaxY) {
-        return windowPosition[3][0] < gridMaxY;
+    public Guard(Integer[] start, List<Integer[]> knownObstacles) {
+        this.position = start;
+        this.obstacles = knownObstacles;
+        this.coordinatesVisited = new ArrayList<>();
+        coordinatesVisited.add(new Integer[]{start[0],start[1]});
+        this.stepsSinceLastUnknownCoordinate = 0;
+        this.hasLeftArea = false;
     }
 
-    public boolean hasSpaceToShiftRight(Integer gridMaxX) {
-        return windowPosition[1][1] < gridMaxX;
+    /**
+     *
+     * @param direction
+     * @param gridMaxX
+     * @param gridMaxY
+     * @return
+     */
+    public boolean takeStep(String direction, Integer gridMaxX, Integer gridMaxY) {
+        Integer[] original = new Integer[] {position[0],position[1]};
+        if(direction.equals("up")) {
+            position[0] -= 1;
+        }
+        else if(direction.equals("down")){
+            position[0] += 1;
+        }
+        else if(direction.equals("left")){
+            position[1] -= 1;
+        }
+        else{
+            position[1] += 1;
+        }
+        
+                
+        if (checkPositionIsValid(gridMaxX, gridMaxY)) {
+            boolean visitedBefore = false;
+            for (Integer[] coordinate : coordinatesVisited) {
+                
+                if (coordinate[0].equals(position[0]) && coordinate[1].equals(position[1])) {
+                    visitedBefore = true;
+                    stepsSinceLastUnknownCoordinate ++;
+                }
+            }
+            if (!visitedBefore) {
+                coordinatesVisited.add(new Integer[]{position[0],position[1]});
+
+            }
+            return true;
+        } else {
+            if (isInBounds(gridMaxX, gridMaxY)) {
+                position = original;
+                return false;
+            }
+            else{
+                this.hasLeftArea = true;
+                return false;
+            }
+            
+        }
+
     }
     
-    public List<Integer[][]> getCoordsOfStringsToCheck() {
-        List<Integer[][]> coordsOfStringsToCheck = new ArrayList<>();
-        Integer[][] descDiagonal = {windowPosition[0], windowPosition[2], windowPosition[4]};
-        coordsOfStringsToCheck.add(descDiagonal);
-        Integer[][] ascDiagonal = {windowPosition[1], windowPosition[2], windowPosition[3]};
-        coordsOfStringsToCheck.add(ascDiagonal);
+
+    
+    public boolean notTooManySteps(){
+        return coordinatesVisited.size() >= stepsSinceLastUnknownCoordinate;
+    }
+
+    private boolean checkPositionIsValid(Integer gridMaxX, Integer gridMaxY) {
         
-        return coordsOfStringsToCheck;
+        if (isInBounds(gridMaxX,gridMaxY)) {
+            for (Integer[] coordinate : obstacles) {//not the most efficient way of doing this but a map datatype requires a key datatype with a .equals() method
+                if (position[0].equals(coordinate[0]) && position[1].equals(coordinate[1])) {
+                    return false;
+                    
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
     
-    private void setupWindowAtNewPosition(Integer[] topLeft) {
-        Integer[] topRight = {topLeft[0], (topLeft[1] + 2)};
-        Integer[] middle = {topLeft[0] + 1, (topLeft[1] + 1)};
-        Integer[] bottomLeft = {topLeft[0] + 2, (topLeft[1])};
-        Integer[] bottomRight = {topLeft[0] + 2, (topLeft[1] + 2)};
-        Integer[][] startPosition = {topLeft, topRight, middle, bottomLeft, bottomRight};
-        this.windowPosition = startPosition;
-        
+    private boolean isInBounds(Integer gridMaxX, Integer gridMaxY){
+        boolean isValidRow = position[0] >= 0 && position[0] <= gridMaxY;
+        boolean isValidColumn = 0 <= position[1] && position[1] <= gridMaxX ;       
+        return isValidColumn && isValidRow;
     }
+
 }

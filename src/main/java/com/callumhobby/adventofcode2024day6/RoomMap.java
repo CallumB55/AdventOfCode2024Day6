@@ -12,142 +12,58 @@ import java.util.Arrays;
  *
  * @author CallumBinns
  */
-public class CrosswordGrid {
+public class RoomMap {
 
     public char[][] grid;
-    private String forwards;
-    private String backwards;
-    private Integer gridMaxX;
-    private Integer gridMaxY;
+    public List<Integer[]> obstacles;
+    public Integer[] guardStartPosition;
+    public Integer gridMaxX;
+    public Integer gridMaxY;
 
-    public CrosswordGrid(List<String> input) {
+    public RoomMap(List<String> input) {
         this.gridMaxX = input.getFirst().length() - 1;
         this.gridMaxY = input.size() - 1;
+        this.obstacles = new ArrayList<>();
         this.grid = new char[gridMaxY+1][gridMaxX+1];
-        for (int i = gridMaxY; i >= 0; i--) {
+        for (int i = 0; i <= gridMaxY; i++) {
             for (int j = 0; j <= gridMaxX; j++) {
-                grid[i][j] = input.get(i).charAt(j);
-            }
-        }
-        this.forwards = "XMAS";
-        this.backwards = "SAMX";
-
-    }
-
-    /**
-     *
-     * @param isColumns
-     * @return integer array where 0 is forwards count and 1 is backwards count
-     */
-    public Integer[] getInstancesInRowsOrColumns(boolean isColumns) {
-        List<String> linesToCheck = new ArrayList<>();
-
-        if (!isColumns) {
-            for (int i = 0; i < grid[0].length; i++) {
-                linesToCheck.add("");
-                for (char[] row : grid) {
-                    linesToCheck.set(i, linesToCheck.get(i) + row[i]);
+                char charToAdd = input.get(i).charAt(j);
+                if (charToAdd == '#') {
+                    obstacles.add(new Integer[]{i,j});
                 }
-            }
-        } else {
-            for (char[] row : grid) {
-                linesToCheck.add(String.valueOf(row));
-            }
-        }
-
-        return xMasCountLogic(linesToCheck);
-    }
-
-    public Integer[] getInstancesInDiagonals() {
-        List<String> linesToCheck = new ArrayList<>();
-        //Doing this graphically with y=mx+c but bound by the length and width of the grid
-        //positive gradient diagonals loops:
-        for (int c = -gridMaxX; c <= gridMaxY; c++) {//loop to iterate through each line (aka every possible y intercept)
-            String line = "";
-            for (int x = 0; x <= gridMaxX; x++) {//iterate through each possible x value
-                Integer y = x + c;
-                if (y >= 0 && x >= 0 && y <= gridMaxY) {
-                    line += grid[y][x];
+                if (charToAdd == '^') {
+                    guardStartPosition = new Integer[]{i,j};
                 }
+                grid[i][j] = charToAdd;
             }
-            linesToCheck.add(line);
-        }
-        //negative gradient diagonals loops:
-        for (int c = 0; c <= gridMaxY + gridMaxX; c++) {
-            String line = "";
-            for (int x = 0; x <= gridMaxX; x++) {//iterate through each possible x value
-                Integer y = -x + c;
-                if (y >= 0 && x >= 0 && y <= gridMaxY) {
-                    line += grid[y][x];
-                }
-
-            }
-            linesToCheck.add(line);
         }
 
-        return xMasCountLogic(linesToCheck);
-    }
 
-    private Integer[] xMasCountLogic(List<String> linesToCheck) {
-        Integer[] xMasCount = {0, 0};
-        for (String string : linesToCheck) {
-            Integer initialCount = string.length();
-            Integer forwardsMissing = string.replaceAll(forwards, "").length();
-            Integer backwardsMissing = string.replaceAll(backwards, "").length();
-
-            xMasCount[0] += initialCount != forwardsMissing ? (initialCount - forwardsMissing) / forwards.length() : 0;
-            xMasCount[1] += initialCount != backwardsMissing ? (initialCount - backwardsMissing) / backwards.length() : 0;
-
-        }
-        return xMasCount;
-    }
-
-    public Integer masInXShapeCount() {
-
-        Integer[] startCoordinates = {0, 0};
-        XWindow win = new XWindow(startCoordinates);
-        Integer xCount = xShapeCounter(win.getCoordsOfStringsToCheck());
-        while (win.hasSpaceToShiftDown(gridMaxY)) {//possible bugs from going down one line too far or too little
-
-            while (win.hasSpaceToShiftRight(gridMaxX)) {
-                xCount += xShapeCounter(win.shiftRightOne());
-            }
-            xCount += xShapeCounter(win.shiftDownOneAndReturnToLeft());
-        }
-        while (win.hasSpaceToShiftRight(gridMaxX)) {
-            xCount += xShapeCounter(win.shiftRightOne());
-        }
-
-        return xCount;
     }
     
-    public void switchSearchStrings(String[] newPair){
-        this.forwards = newPair[0];
-        this.backwards = newPair[1];
-    }
-
-    private Integer xShapeCounter(List<Integer[][]> in) {
-        List<String> linesToCheck = new ArrayList<>();
-        for (Integer[][] charCoords : in) {
-            String line = "";
-            for (Integer[] charCoord : charCoords) {
-                line += grid[charCoord[0]][charCoord[1]];
+    public void pathVisualiser(List<Integer[]> visitedPositions){
+        for (int i = 0; i <= gridMaxY; i++) {
+            String lineToPrint = "";
+            for (int j = 0; j <= gridMaxX; j++) {
+                if (inCoordinateArray(i,j,visitedPositions)) {
+                    lineToPrint += 'x';
+                }
+                else{
+                    lineToPrint += grid[i][j];
+                }
             }
-            linesToCheck.add(line);
-        }
-        boolean isX = true;
-        
-        for (String string : linesToCheck) {
-            if (!(string.equals(forwards) || string.equals(backwards))) {
-                isX = false;
-            }
-        }
-        
-        if (isX) {
-            return 1;
-        }
-        else{
-            return 0;
+            System.out.println(lineToPrint);
         }
     }
+    
+    private boolean inCoordinateArray(Integer y, Integer x, List<Integer[]> coordinateArray){
+        boolean isIn = false;
+        for (Integer[] coordinate : coordinateArray) {
+            if (coordinate[0].equals(y) && coordinate[1].equals(x)) {
+                isIn = true;
+            }
+        }
+        return isIn;
+    }
+    
 }
