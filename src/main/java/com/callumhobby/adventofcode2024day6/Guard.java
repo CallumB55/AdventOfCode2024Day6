@@ -110,5 +110,14 @@ public class Guard {
         boolean isValidColumn = 0 <= position[1] && position[1] <= gridMaxX ;       
         return isValidColumn && isValidRow;
     }
+    
+    public void addNewObstacle(Integer[] newObstacle){
+        obstacles.add(newObstacle);
+    }
+    
+    public void swapNewObstacle(Integer[] newObstacle){
+        obstacles.removeLast();
+        addNewObstacle(newObstacle);
+    }
 
 }
